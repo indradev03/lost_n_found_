@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:lost_n_found/features/batch/domain/entities/batch_entity.dart';
+import 'package:lost_n_found/features/batch/presentation/state/batch_state.dart';
+import 'package:lost_n_found/features/batch/presentation/view_model/batch_viewmodel.dart';
 import '../../../../app/routes/app_routes.dart';
 import '../../../../app/theme/app_colors.dart';
 import '../../../../app/theme/theme_extensions.dart';
@@ -39,12 +42,7 @@ class _SignupPageState extends ConsumerState<SignupPage> {
   ];
 
   // Mock batch data - will come from GET /api/v1/batches
-  final List<Map<String, String>> _batches = [
-    {'id': '1', 'name': '35A'},
-    {'id': '2', 'name': '35B'},
-    {'id': '3', 'name': '36A'},
-    {'id': '4', 'name': '36B'},
-  ];
+  List<BatchEntity> _batches = [];
 
   @override
   void dispose() {
@@ -85,8 +83,20 @@ class _SignupPageState extends ConsumerState<SignupPage> {
     Navigator.of(context).pop();
   }
 
+  void initState() {
+    super.initState();
+    Future.microtask(() {
+      ref.read(batchViewModelProvider.notifier).getAllBatches();
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
+    final batchState = ref.watch(batchViewModelProvider);
+    if (batchState.status == BatchStatus.loaded) {
+      _batches = batchState.batches;
+    }
+
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
@@ -277,15 +287,17 @@ class _SignupPageState extends ConsumerState<SignupPage> {
                   // Batch Selection
                   DropdownButtonFormField<String>(
                     initialValue: _selectedBatch,
-                    decoration: const InputDecoration(
+                    decoration: InputDecoration(
                       labelText: 'Select Batch',
-                      hintText: 'Choose your batch',
+                      hintText: batchState.status == BatchStatus.loading
+                          ? 'Loading batches...'
+                          : 'Choose your batch',
                       prefixIcon: Icon(Icons.school_rounded),
                     ),
                     items: _batches.map((batch) {
                       return DropdownMenuItem<String>(
-                        value: batch['id'],
-                        child: Text(batch['name']!),
+                        value: batch.batchId,
+                        child: Text(batch.batchName),
                       );
                     }).toList(),
                     onChanged: (value) {

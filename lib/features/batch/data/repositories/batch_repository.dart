@@ -1,9 +1,15 @@
 import 'package:dartz/dartz.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lost_n_found/core/error/failures.dart';
 import 'package:lost_n_found/features/batch/data/datasources/batch_datasource.dart';
+import 'package:lost_n_found/features/batch/data/datasources/local/batch_local_datasource.dart';
 import 'package:lost_n_found/features/batch/data/models/batch_hive_model.dart';
 import 'package:lost_n_found/features/batch/domain/entities/batch_entity.dart';
 import 'package:lost_n_found/features/batch/domain/repositories/batch_repository.dart';
+
+final batchRepositoryProvider = Provider<IBatchRepository>((ref) {
+  return BatchRepository(datasource: ref.read(batchLocalDatasourceProvider));
+});
 
 class BatchRepository implements IBatchRepository {
   final IBatchDatasource _datasource;
@@ -26,12 +32,6 @@ class BatchRepository implements IBatchRepository {
   }
 
   @override
-  Future<Either<Failure, bool>> deleteBatch(String batchId) {
-    // TODO: implement deleteBatch
-    throw UnimplementedError();
-  }
-
-  @override
   Future<Either<Failure, List<BatchEntity>>> getAllBatches() async {
     try {
       final models = await _datasource.getAllBatches();
@@ -40,6 +40,12 @@ class BatchRepository implements IBatchRepository {
     } catch (e) {
       return Left(LocalDatabaseFailure(message: e.toString()));
     }
+  }
+
+  @override
+  Future<Either<Failure, bool>> deleteBatch(String batchId) {
+    // TODO: implement deleteBatch
+    throw UnimplementedError();
   }
 
   @override
